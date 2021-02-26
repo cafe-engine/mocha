@@ -1,0 +1,6 @@
+.vscode
+mocha
+src/*.o
+*.a
+*.so
+*.sublime-*

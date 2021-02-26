@@ -1,2 +1,2 @@
-# mocha
-tiny c lib for handle audio
+# Mocha
+a tiny c lib for handle audio
