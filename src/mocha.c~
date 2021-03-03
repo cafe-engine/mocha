@@ -21,28 +21,6 @@
 #define mo_true 1
 #define mo_false 0
 
-struct mo_AudioBuffer {
-  ma_decoder decoder;
-  unsigned char id;
-
-  float volume;
-  float pitch;
-
-  int playing;
-  int paused;
-  int loop;
-  int loaded;
-
-//   MO_AUDIO_USAGE usage;
-
-//   unsigned char *data;
-//   size_t dataSize;
-
-  mo_AudioData *data;
-
-  size_t currentReadPos;
-};
-
 struct Mocha {
   struct {
     ma_context ctx;
