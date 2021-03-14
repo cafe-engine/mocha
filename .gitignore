@@ -4,3 +4,6 @@ src/*.o
 *.a
 *.so
 *.sublime-*
+obj/
+bin/
+lib/
