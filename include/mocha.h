@@ -55,8 +55,6 @@ struct mo_AudioData {
   int refs;
 };
 
-
-
 typedef struct mo_Sound {
   mo_AudioBuffer *audioBuffer;
 } mo_Sound;
@@ -84,48 +82,48 @@ typedef struct mo_Sound {
  * Audio Module
  *======================*/
 
-MO_API Mocha* mocha_init(int flags);
-MO_API int mocha_start_device(Mocha *mo);
-MO_API int mocha_stop_device(Mocha *mo);
-MO_API void mocha_terminate(Mocha *mo);
+MO_API int mocha_init(int flags);
+MO_API int mocha_start_device();
+MO_API int mocha_stop_device();
+MO_API void mocha_terminate();
 
-MO_API void mocha_set_volume(Mocha *mocha, float volume);
+MO_API void mocha_set_volume(float volume);
 
-MO_API int mocha_get_id(Mocha *mocha, mo_AudioBuffer *buffer);
-MO_API mo_AudioBuffer *mocha_get_from_id(Mocha *mocha, unsigned int id);
+MO_API int mocha_get_id(mo_AudioBuffer *buffer);
+MO_API mo_AudioBuffer *mocha_get_from_id(unsigned int id);
 
 /***************
  * AudioBuffer
  ***************/
-MO_API mo_AudioBuffer *mocha_buffer_load(Mocha *mocha, const char *filename, MO_AUDIO_USAGE_ usage);
-MO_API void mocha_buffer_play(Mocha *mocha, mo_AudioBuffer *audioBuffer);
-MO_API void mocha_buffer_stop(Mocha *mocha, mo_AudioBuffer *audioBuffer);
-MO_API void mocha_buffer_pause(Mocha *mocha, mo_AudioBuffer *audioBuffer);
-MO_API void mocha_buffer_unload(Mocha *mocha, mo_AudioBuffer *audioBuffer);
+MO_API mo_AudioBuffer *mocha_buffer_load(const char *filename, MO_AUDIO_USAGE_ usage);
+MO_API void mocha_buffer_play(mo_AudioBuffer *audioBuffer);
+MO_API void mocha_buffer_stop(mo_AudioBuffer *audioBuffer);
+MO_API void mocha_buffer_pause(mo_AudioBuffer *audioBuffer);
+MO_API void mocha_buffer_unload(mo_AudioBuffer *audioBuffer);
 
-MO_API int mocha_buffer_playing(Mocha *mocha, mo_AudioBuffer *audioBuffer);
-MO_API int mocha_buffer_paused(Mocha *mocha, mo_AudioBuffer *audioBuffer);
+MO_API int mocha_buffer_playing(mo_AudioBuffer *audioBuffer);
+MO_API int mocha_buffer_paused(mo_AudioBuffer *audioBuffer);
 
-MO_API void mocha_buffer_volume(Mocha *mocha, mo_AudioBuffer *audioBuffer, float volume);
+MO_API void mocha_buffer_volume(mo_AudioBuffer *audioBuffer, float volume);
 
 /************
  * Sound
  ************/
-MO_API mo_Sound mocha_sound_load(Mocha *mocha, const char *filename, MO_AUDIO_USAGE_ usage);
-MO_API void mocha_sound_unload(Mocha *mocha, mo_Sound sound);
+MO_API mo_Sound mocha_sound_load(const char *filename, MO_AUDIO_USAGE_ usage);
+MO_API void mocha_sound_unload(mo_Sound sound);
 
-MO_API void mocha_sound_play(Mocha *mocha, mo_Sound sound);
-MO_API void mocha_sound_stop(Mocha *mocha, mo_Sound sound);
-MO_API void mocha_sound_pause(Mocha *mocha, mo_Sound sound);
+MO_API void mocha_sound_play(mo_Sound sound);
+MO_API void mocha_sound_stop(mo_Sound sound);
+MO_API void mocha_sound_pause(mo_Sound sound);
 
-MO_API int mocha_sound_playing(Mocha *mocha, mo_Sound sound);
-MO_API int mocha_sound_paused(Mocha *mocha, mo_Sound sound);
-MO_API float mocha_sound_volume(Mocha *mocha, mo_Sound sound, float *volume);
+MO_API int mocha_sound_playing(mo_Sound sound);
+MO_API int mocha_sound_paused(mo_Sound sound);
+MO_API float mocha_sound_volume(mo_Sound sound, float *volume);
 
 /********************
  * Audio Data
  ********************/
 
-MO_API void mocha_data_free(Mocha *mocha, mo_AudioData *data);
+MO_API void mocha_data_free(mo_AudioData *data);
 
 #endif // TICO_AUDIO_H
