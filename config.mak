@@ -1,3 +1,3 @@
 NAME = mocha
 INCLUDE = -Iexternal
-LFLAGS = -static -lpthread -lm -ldl
+LFLAGS = -lpthread -lm -ldl
