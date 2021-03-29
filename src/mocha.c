@@ -24,6 +24,17 @@
 #define mo_true 1
 #define mo_false 0
 
+struct mo_buffer_s {
+  ma_decoder decoder;
+  float volume, pitch;
+
+  int playing, paused;
+  int loop, loaded;
+
+  mo_data_t data;
+  mo_uint32 offset;
+};
+
 struct mo_AudioBuffer {
   ma_decoder decoder;
   unsigned char id;
@@ -256,6 +267,49 @@ int mocha_get_id(mo_AudioBuffer *buffer) {
 mo_AudioBuffer *mocha_get_from_id(unsigned int id) {
     Mocha *mo = mocha();
     return &mo->multiChannel.buffer[id];
+}
+
+mo_AudioBuffer *mocha_buffer(void *data, long size, int usage) {
+    Mocha *mo = mocha();
+    int index = 0;
+    int i;
+    for (i = 0; i < MAX_AUDIO_BUFFER_CHANNELS; i++) {
+        index = i;
+        break;
+    }
+
+    mo_AudioBuffer *buff = &mo->multiChannel.buffer[index];
+    ma_decoder_config decoderConfig = ma_decoder_config_init(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO_DEVICE_SAMPLE_RATE);
+    ma_result result = 0;
+    buff->currentReadPos = 0;
+    if (usage == MO_AUDIO_STREAM) {
+        mo_AudioData *aData = NULL;
+        aData = malloc(sizeof(*aData));
+        aData->data = data;
+        aData->size = size;
+        result = ma_decoder_init_memory(aData->data, aData->size, &decoderConfig, &buff->decoder);
+        buff->data = aData;
+        // mocha_resources_add_sound(filename, aData);
+        aData->refs++;
+    } else {
+        ma_uint64 pFrameCountOut;
+        void *ppData;
+        result = ma_decode_memory(data, size, &decoderConfig, &pFrameCountOut, &ppData);
+        buff->data = ppData;
+        free(data);
+    }
+
+    if (result != MA_SUCCESS) {
+        cst_error("Failed to load sound");
+        return NULL;
+     }
+    buff->loaded = mo_true;
+    buff->playing = mo_false;
+    buff->paused = mo_true;
+    //   audioBuffer->usage = usage;
+    buff->loop = mo_false;
+
+    return buff;
 }
 
 mo_AudioBuffer *mocha_buffer_load(const char *filename, MO_AUDIO_USAGE_ usage) {

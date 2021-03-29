@@ -45,6 +45,20 @@ typedef enum {
 typedef struct Mocha Mocha;
 typedef struct mo_AudioData mo_AudioData;
 typedef struct mo_AudioBuffer mo_AudioBuffer;
+
+typedef struct mo_buffer_s mo_buffer_t;
+typedef struct mo_data_s mo_data_t;
+typedef unsigned int mo_uint32;
+
+struct mo_data_s {
+  int usage;
+  union {
+    void *data;
+    void *fp;
+  };
+  mo_uint32 size;
+};
+
 // typedef unsigned int mo_Sound;
 
 struct mo_AudioData {
@@ -78,6 +92,21 @@ typedef struct mo_Sound {
 
 // MO_API int mocha_init(mo_AudioSystem *system);
 // MO_API int mocha_deinit(mo_AudioSystem *system);
+
+// mo_init(int flags);
+// mo_deinit();
+
+// mo_set_volume(float volume);
+// mo_start();
+// mo_stop();
+
+// mo_buffer_t mo_buffer_from_data(void *data, mo_uint32 size, int usage);
+// mo_buffer_t mo_buffer_from_file(const char *filename, int usage);
+// int mo_buffer_play(mo_buffer_t *buff);
+// int mo_buffer_stop(mo_buffer_t *buff);
+// int mo_buffer_pause(mo_buffer_t *buff);
+// int mo_buffer_deinit(mo_buffer_t *buff);
+
 /*======================
  * Audio Module
  *======================*/
@@ -95,6 +124,7 @@ MO_API mo_AudioBuffer *mocha_get_from_id(unsigned int id);
 /***************
  * AudioBuffer
  ***************/
+MO_API mo_AudioBuffer *mocha_buffer(void *data, long size, int audio_usage);
 MO_API mo_AudioBuffer *mocha_buffer_load(const char *filename, MO_AUDIO_USAGE_ usage);
 MO_API void mocha_buffer_play(mo_AudioBuffer *audioBuffer);
 MO_API void mocha_buffer_stop(mo_AudioBuffer *audioBuffer);
