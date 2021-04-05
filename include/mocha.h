@@ -14,6 +14,7 @@
 
 #define MO_API extern
 #define MOCHA_VALUE float
+#define MO_TYPE_MASK 0x10
 
 #define MAX_AUDIO_DATA 64
 

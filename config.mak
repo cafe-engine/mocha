@@ -1,3 +1,7 @@
 NAME = mocha
 INCLUDE = -Iexternal
-LFLAGS = -lpthread -lm -ldl
+ifeq ($(OS),Windows_NT)
+    LFLAGS = -pthread -lm
+else
+    LFLAGS = -lpthread -lm -ldl
+endif

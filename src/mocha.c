@@ -25,15 +25,21 @@
 #define mo_false 0
 
 struct mo_buffer_s {
-  ma_decoder decoder;
-  float volume, pitch;
+    unsigned short id;
+    ma_decoder decoder;
+    float volume, pitch;
 
-  int playing, paused;
-  int loop, loaded;
+    int playing, paused;
+    int loop, loaded;
+    mo_uint32 offset;
 
-  mo_data_t data;
-  mo_uint32 offset;
+    // mo_data_t data;
+    int usage;
+    union { void *data, *fp; };
+    mo_uint32 size;
 };
+
+typedef unsigned int mo_sound_t;
 
 struct mo_AudioBuffer {
   ma_decoder decoder;
@@ -74,8 +80,8 @@ struct Mocha {
   } multiChannel;
 };
 
-static Mocha _ctx;
-#define mocha() (&_ctx)
+static Mocha _mocha_ctx;
+#define mocha() (&_mocha_ctx)
 
 static char* _readfile(const char *filename, size_t *size) {
     FILE *fp;
@@ -274,8 +280,10 @@ mo_AudioBuffer *mocha_buffer(void *data, long size, int usage) {
     int index = 0;
     int i;
     for (i = 0; i < MAX_AUDIO_BUFFER_CHANNELS; i++) {
-        index = i;
-        break;
+        if (!mo->multiChannel.buffer[i].loaded) {
+            index = i;
+            break;
+        }
     }
 
     mo_AudioBuffer *buff = &mo->multiChannel.buffer[index];
@@ -285,7 +293,8 @@ mo_AudioBuffer *mocha_buffer(void *data, long size, int usage) {
     if (usage == MO_AUDIO_STREAM) {
         mo_AudioData *aData = NULL;
         aData = malloc(sizeof(*aData));
-        aData->data = data;
+        aData->data = (unsigned char*)data;
+        aData->usage = usage;
         aData->size = size;
         result = ma_decoder_init_memory(aData->data, aData->size, &decoderConfig, &buff->decoder);
         buff->data = aData;
@@ -367,7 +376,6 @@ mo_AudioBuffer *mocha_buffer_load(const char *filename, MO_AUDIO_USAGE_ usage) {
 
 void mocha_buffer_play(mo_AudioBuffer *audioBuffer) {
   if (audioBuffer) {
-    cst_log("Playing sound %d", audioBuffer->id);
     audioBuffer->playing = mo_true;
     audioBuffer->paused = mo_false;
   }
@@ -391,11 +399,11 @@ void mocha_buffer_set_volume(mo_AudioBuffer *audioBuffer, float volume) {
   if (audioBuffer) audioBuffer->volume = volume;
 }
 
-int mocha_buffer_is_playing(mo_AudioBuffer *audioBuffer) {
+int mocha_buffer_playing(mo_AudioBuffer *audioBuffer) {
   return audioBuffer->playing;
 }
 
-int mocha_buffer_is_paused(mo_AudioBuffer *audioBuffer) {
+int mocha_buffer_paused(mo_AudioBuffer *audioBuffer) {
   return audioBuffer->paused;
 }
 
@@ -431,10 +439,10 @@ void mocha_sound_pause(mo_Sound sound) {
 }
 
 int mocha_sound_playing(mo_Sound sound) {
-  return mocha_buffer_is_playing(sound.audioBuffer);
+  return mocha_buffer_playing(sound.audioBuffer);
 }
 int mocha_sound_paused(mo_Sound sound) {
-  return mocha_buffer_is_paused(sound.audioBuffer);
+  return mocha_buffer_paused(sound.audioBuffer);
 }
 
 void mocha_sound_set_volume(mo_Sound sound, float volume) {
