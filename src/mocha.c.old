@@ -41,7 +41,7 @@ struct mo_buffer_s {
 
 typedef unsigned int mo_sound_t;
 
-struct mo_audio_t {
+struct mo_AudioBuffer {
   ma_decoder decoder;
   unsigned char id;
 
@@ -78,7 +78,6 @@ struct mo_audio_s {
     int playing, paused;
     int loop, loaded;
 
-    int usage;
     mo_uint32 size;
     mo_uint32 offset;
     union { void *data, *fp; };
@@ -94,10 +93,10 @@ struct Mocha {
   } system;
 
   mo_AudioData data[MAX_AUDIO_DATA];
-  mo_audio_t channels[MAX_AUDIO_BUFFER_CHANNELS];
+  mo_AudioBuffer channels[MAX_AUDIO_BUFFER_CHANNELS];
 
   struct {
-    mo_audio_t buffer[MAX_AUDIO_BUFFER_CHANNELS];
+    mo_AudioBuffer buffer[MAX_AUDIO_BUFFER_CHANNELS];
   } multiChannel;
 };
 
@@ -126,7 +125,7 @@ static char* _readfile(const char *filename, size_t *size) {
 
 // static mo_Audio audio = {0};
 
-static ma_uint32 _read_and_mix_pcm_frames(mo_audio_t *audioBuffer, float *pOutputF32, ma_uint32 frameCount) {
+static ma_uint32 _read_and_mix_pcm_frames(mo_AudioBuffer *audioBuffer, float *pOutputF32, ma_uint32 frameCount) {
 
   float temp[4096];
   ma_uint32 tempCapInFrames = ma_countof(temp) / AUDIO_DEVICE_CHANNELS;
@@ -143,12 +142,12 @@ static ma_uint32 _read_and_mix_pcm_frames(mo_audio_t *audioBuffer, float *pOutpu
       framesToReadThisIteration = totalFramesRemaining;
     }
 
-    if (audioBuffer->usage == MO_AUDIO_STREAM) {
+    if (audioBuffer->data->usage == MO_AUDIO_STREAM) {
       framesReadThisIteration = (ma_uint32)ma_decoder_read_pcm_frames(pDecoder, temp, framesToReadThisIteration);
     } else {
       framesReadThisIteration = framesToReadThisIteration;
-      memcpy(temp, audioBuffer->data + audioBuffer->offset, framesToReadThisIteration);
-      audioBuffer->offset += framesReadThisIteration;
+      memcpy(temp, audioBuffer->data + audioBuffer->currentReadPos, framesToReadThisIteration);
+      audioBuffer->currentReadPos += framesReadThisIteration;
     }
 
 
@@ -177,13 +176,13 @@ static void _data_callback(ma_device *pDevice, void *pOutput, const void *pInput
   ma_mutex_lock(&mo->system.lock);
   int i;
   for (i = 0; i < MAX_AUDIO_BUFFER_CHANNELS; i++) {
-    mo_audio_t *audioBuffer = &mo->multiChannel.buffer[i];
+    mo_AudioBuffer *audioBuffer = &mo->multiChannel.buffer[i];
     if (audioBuffer->playing && audioBuffer->loaded && !audioBuffer->paused) {
       ma_uint32 framesRead = _read_and_mix_pcm_frames(audioBuffer, fOutput, frameCount);
       if (framesRead < frameCount) {
         if (audioBuffer->loop) {
           ma_decoder_seek_to_pcm_frame(&audioBuffer->decoder, 0);
-          audioBuffer->offset = 0;
+          audioBuffer->currentReadPos = 0;
         } else {
           audioBuffer->playing = mo_false;
         }
@@ -195,7 +194,7 @@ static void _data_callback(ma_device *pDevice, void *pOutput, const void *pInput
   (void)pInput;
 }
 
-int mo_init(int flags) {
+int mocha_init(int flags) {
     Mocha *mo = mocha();
     ma_context_config ctxConfig = ma_context_config_init();
     ma_result result = ma_context_init(NULL, 0, &ctxConfig, &mo->system.ctx);
@@ -222,7 +221,7 @@ int mo_init(int flags) {
     return 0;
   }
 
-  result = mo_start_device(mo);
+  result = mocha_start_device(mo);
   if (result != MA_SUCCESS) {
     cst_error("Failed to start device");
     // dog_log(1, "[mocha] failed to start mocha device");
@@ -242,14 +241,14 @@ int mo_init(int flags) {
 
   int i;
   for (i = 0; i < MAX_AUDIO_BUFFER_CHANNELS; i++) {
-    mo_audio_t *buffer = &mo->multiChannel.buffer[i];
+    mo_AudioBuffer *buffer = &mo->multiChannel.buffer[i];
     buffer->playing = mo_false;
     buffer->volume = 1.f;
     buffer->pitch = 1.f;
     buffer->loaded = mo_false;
     buffer->paused = mo_false;
     buffer->loop = mo_false;
-    buffer->flags = i;
+    buffer->id = i;
   }
 
   mo->system.isReady = mo_true;
@@ -258,17 +257,17 @@ int mo_init(int flags) {
   return 1;
 }
 
-int mo_start_device() {
+int mocha_start_device() {
     Mocha *mo = mocha();
     return ma_device_start(&mo->system.device);
 }
 
-int mo_stop_device() {
+int mocha_stop_device() {
     Mocha *mo = mocha();
     return ma_device_stop(&mo->system.device);
 }
 
-int mo_deinit() {
+void mocha_terminate() {
     Mocha *mo = mocha();
     if (mo->system.isReady) {
         ma_mutex_uninit(&mo->system.lock);
@@ -278,21 +277,23 @@ int mo_deinit() {
         cst_error("Audio Module could not be closed, not initialized");
     }
     cst_log("Audio Module terminated");
-    return 1;
 }
 
-#if 0
-int mocha_get_id(mo_audio_t *buffer) {
+void mocha_set_master_volume(float volume) {
+    Mocha *mo = mocha();
+    ma_device_set_master_volume(&mo->system.device, volume);
+}
+
+int mocha_get_id(mo_AudioBuffer *buffer) {
     return buffer->id;
 }
 
-mo_audio_t *mocha_get_from_id(unsigned int id) {
+mo_AudioBuffer *mocha_get_from_id(unsigned int id) {
     Mocha *mo = mocha();
     return &mo->multiChannel.buffer[id];
 }
-#endif
 
-mo_audio_t *mo_audio(void *data, mo_uint32 size, int usage) {
+mo_AudioBuffer *mocha_buffer(void *data, long size, int usage) {
     Mocha *mo = mocha();
     int index = 0;
     int i;
@@ -303,10 +304,10 @@ mo_audio_t *mo_audio(void *data, mo_uint32 size, int usage) {
         }
     }
 
-    mo_audio_t *buff = &mo->multiChannel.buffer[index];
+    mo_AudioBuffer *buff = &mo->multiChannel.buffer[index];
     ma_decoder_config decoderConfig = ma_decoder_config_init(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO_DEVICE_SAMPLE_RATE);
     ma_result result = 0;
-    buff->offset = 0;
+    buff->currentReadPos = 0;
     if (usage == MO_AUDIO_STREAM) {
         mo_AudioData *aData = NULL;
         aData = malloc(sizeof(*aData));
@@ -338,7 +339,7 @@ mo_audio_t *mo_audio(void *data, mo_uint32 size, int usage) {
     return buff;
 }
 
-mo_audio_t* mo_audio_load(const char *filename, int usage) {
+mo_AudioBuffer *mocha_buffer_load(const char *filename, MO_AUDIO_USAGE_ usage) {
     Mocha *mo = mocha();
     int index = 0;
     int i;
@@ -348,10 +349,10 @@ mo_audio_t* mo_audio_load(const char *filename, int usage) {
             break;
         }
     }
-    mo_audio_t *audioBuffer = &mo->multiChannel.buffer[index];
+    mo_AudioBuffer *audioBuffer = &mo->multiChannel.buffer[index];
     ma_decoder_config decoderConfig = ma_decoder_config_init(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO_DEVICE_SAMPLE_RATE);
     ma_result result = 0;
-    audioBuffer->offset = 0;
+    audioBuffer->currentReadPos = 0;
 
     if (usage == MO_AUDIO_STREAM) {
         // mo_AudioData *aData = mocha_resources_get_sound(filename);
@@ -391,55 +392,48 @@ mo_audio_t* mo_audio_load(const char *filename, int usage) {
     return audioBuffer;
 }
 
-int mo_play(mo_audio_t *audioBuffer) {
+void mocha_buffer_play(mo_AudioBuffer *audioBuffer) {
   if (audioBuffer) {
     audioBuffer->playing = mo_true;
     audioBuffer->paused = mo_false;
-    return 1;
   }
-  return 0;
 }
 
-int mo_stop(mo_audio_t *audioBuffer) {
+void mocha_buffer_stop(mo_AudioBuffer *audioBuffer) {
   if (audioBuffer) {
     audioBuffer->playing = mo_false;
     ma_decoder_seek_to_pcm_frame(&audioBuffer->decoder, 0);
   }
-  return 1;
 }
 
-int mo_pause(mo_audio_t *audioBuffer) {
+void mocha_buffer_pause(mo_AudioBuffer *audioBuffer) {
   if (audioBuffer) {
     audioBuffer->paused = mo_true;
     audioBuffer->playing = mo_false;
   }
-  return 1;
 }
 
-float mo_volume(mo_audio_t *audioBuffer, float volume) {
-    if (audioBuffer) audioBuffer->volume = volume;
-    else ma_device_set_master_volume(&mocha()->system.device, volume);
-    return volume;
+void mocha_buffer_set_volume(mo_AudioBuffer *audioBuffer, float volume) {
+  if (audioBuffer) audioBuffer->volume = volume;
 }
 
-int mo_is_playing(mo_audio_t *audioBuffer) {
+int mocha_buffer_playing(mo_AudioBuffer *audioBuffer) {
   return audioBuffer->playing;
 }
 
-int mo_is_paused(mo_audio_t *audioBuffer) {
+int mocha_buffer_paused(mo_AudioBuffer *audioBuffer) {
   return audioBuffer->paused;
 }
 
-int mo_unload(mo_audio_t *audioBuffer) {
+void mocha_buffer_unload(mo_AudioBuffer *audioBuffer) {
   if (audioBuffer) {
     audioBuffer->loaded = mo_false;
+    audioBuffer->data->refs--;
     audioBuffer->data = NULL;
     ma_decoder_uninit(&audioBuffer->decoder);
   }
-  return 1;
 }
 
-#if 0
 mo_Sound mocha_sound_load(const char *filename, MO_AUDIO_USAGE_ usage) {
   mo_Sound sound = {0};
   sound.audioBuffer = mocha_buffer_load(filename, usage);
@@ -480,4 +474,3 @@ void mocha_sound_set_volume(mo_Sound sound, float volume) {
 void mocha_data_free(mo_AudioData *data) {
   free(data->data);
 }
-#endif

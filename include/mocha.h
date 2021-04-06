@@ -47,8 +47,8 @@ typedef struct Mocha Mocha;
 typedef struct mo_AudioData mo_AudioData;
 typedef struct mo_AudioBuffer mo_AudioBuffer;
 
-typedef struct mo_buffer_s mo_buffer_t;
-typedef struct mo_data_s mo_data_t;
+typedef struct mo_audio_s mo_audio_t;
+typedef struct mo_wave_s mo_wave_t;
 typedef unsigned int mo_uint32;
 
 struct mo_data_s {
@@ -111,6 +111,22 @@ typedef struct mo_Sound {
 /*======================
  * Audio Module
  *======================*/
+MO_API int mo_init(int flags);
+MO_API int mo_deinit();
+
+MO_API int mo_start_device();
+MO_API int mo_stop_device();
+
+MO_API mo_audio_t* mo_audio(void *data, mo_uint32 size, int usage);
+MO_API mo_audio_t* mo_audio_load(const char *filename, int usage);
+MO_API int mo_audio_destroy(mo_audio_t *audio);
+
+MO_API float mo_volume(mo_audio_t *audio, float volume);
+MO_API int mo_play(mo_audio_t *audio);
+MO_API int mo_pause(mo_audio_t *audio);
+MO_API int mo_stop(mo_audio_t *audio);
+
+MO_API int mo_is_playing(mo_audio_t *audio);
 
 MO_API int mocha_init(int flags);
 MO_API int mocha_start_device();

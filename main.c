@@ -1,7 +1,7 @@
 #include "mocha.h"
 
 int main(int argc, char ** argv) {
-    mocha_init(0);
+    mo_init(0);
 
     FILE *fp = fopen("music.wav", "r");
     fseek(fp, 0, SEEK_END);
@@ -13,13 +13,14 @@ int main(int argc, char ** argv) {
 
     fclose(fp);
 
-    mo_AudioBuffer *buf = mocha_buffer(data, sz, MO_AUDIO_STREAM);
-    mocha_buffer_play(buf);
+    mo_audio_t *audio = mo_audio(data, sz, MO_AUDIO_STREAM);
+    mo_play(audio);
+
+    while (mo_is_playing(audio));
 
     // mocha_sound_stop(ctx, snd);
-    while (mocha_buffer_playing(buf));
 
-    mocha_terminate();
+    mo_deinit();
 
     return 0;
 }
