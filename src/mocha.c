@@ -133,6 +133,7 @@ static ma_uint32 _read_and_mix_pcm_frames(mo_audio_t *audioBuffer, float *pOutpu
   ma_uint32 totalFramesRead = 0;
   ma_decoder *pDecoder = &audioBuffer->decoder;
   float volume = audioBuffer->volume;
+  float size = audioBuffer->size * ma_get_bytes_per_frame(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS);
 
   while (totalFramesRead < frameCount) {
     ma_uint32 iSample;
@@ -147,8 +148,10 @@ static ma_uint32 _read_and_mix_pcm_frames(mo_audio_t *audioBuffer, float *pOutpu
       framesReadThisIteration = (ma_uint32)ma_decoder_read_pcm_frames(pDecoder, temp, framesToReadThisIteration);
     } else {
       framesReadThisIteration = framesToReadThisIteration;
-      memcpy(temp, audioBuffer->data + audioBuffer->offset, framesToReadThisIteration);
-      audioBuffer->offset += framesReadThisIteration;
+      mo_uint32 aux = framesToReadThisIteration * ma_get_bytes_per_frame(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS);
+      memcpy(temp, audioBuffer->data + audioBuffer->offset, aux);
+      if (audioBuffer->offset > size) framesReadThisIteration = 0;
+      audioBuffer->offset += aux;
     }
 
 
@@ -322,6 +325,7 @@ mo_audio_t *mo_audio(void *data, mo_uint32 size, int usage) {
         void *ppData;
         result = ma_decode_memory(data, size, &decoderConfig, &pFrameCountOut, &ppData);
         buff->data = ppData;
+        buff->size = pFrameCountOut;
         free(data);
     }
 
@@ -333,6 +337,7 @@ mo_audio_t *mo_audio(void *data, mo_uint32 size, int usage) {
     buff->playing = mo_false;
     buff->paused = mo_true;
     //   audioBuffer->usage = usage;
+    buff->usage = usage;
     buff->loop = mo_false;
 
     return buff;
@@ -375,7 +380,6 @@ mo_audio_t* mo_audio_load(const char *filename, int usage) {
         void *ppData;
         result = ma_decode_memory(data, size, &decoderConfig, &pFrameCountOut, &ppData);
         audioBuffer->data = ppData;
-        free(data);
     }
 
     if (result != MA_SUCCESS) {
@@ -389,6 +393,12 @@ mo_audio_t* mo_audio_load(const char *filename, int usage) {
     audioBuffer->loop = mo_false;
 
     return audioBuffer;
+}
+
+int mo_audio_destroy(mo_audio_t *audio) {
+    if (!audio) return 0;   
+
+    return 1;
 }
 
 int mo_play(mo_audio_t *audioBuffer) {
