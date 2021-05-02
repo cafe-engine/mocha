@@ -1,10 +1,7 @@
 .vscode
+.clangd
 mocha
-src/*.o
+*.o
 *.a
 *.so
-*.sublime-*
-obj/
-bin/
-lib/
 compile_commands.json
