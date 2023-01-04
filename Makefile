@@ -6,7 +6,7 @@ OBJ = $(SRC:%.c=%.o)
 
 INCLUDE = -I. -Iexternal
 
-CFLAGS = -Wall -std=c99
+CFLAGS = -Wall -std=c99 -g
 LFLAGS = -L. -l$(NAME) -lm -lpthread -ldl
 
 LIBNAME = lib$(NAME).a
@@ -16,7 +16,7 @@ LIBNAME = lib$(NAME).a
 
 build: $(LIBNAME)
 
-hello: $(LIBNAME)
+hello: examples/hello/main.c $(LIBNAME)
 	$(CC) examples/hello/main.c -o hello $(INCLUDE) $(CFLAGS) $(LFLAGS)
 
 %.a: $(OBJ)

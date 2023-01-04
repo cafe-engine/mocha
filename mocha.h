@@ -1,81 +1,77 @@
 #ifndef MOCHA_H
 #define MOCHA_H
 
-// #include "definitions.h"
-
 #include <stdio.h>
-#include <stdlib.h>
-
-#define TRACEERR(...) int _;(void)_
-#define ERRLOG(...) int _;(void)_
-
-#define TRACELOG(...) int _;(void)_
-#define LOG(...) int _;(void)_
 
 #define MO_API extern
-#define MOCHA_VALUE float
-#define MO_TYPE_MASK 0x10
 
-#define MAX_AUDIO_DATA 64
+#define MO_FALSE 0
+#define MO_TRUE  1
 
-// #include "miniaudio.h"
+#define MO_OK     0
+#define MO_ERROR -1
 
-#ifndef AUDIO_DEVICE_FORMAT
-  #define AUDIO_DEVICE_FORMAT ma_format_f32
+#ifndef MO_AUDIO_FORMAT
+  #define MO_AUDIO_FORMAT ma_format_f32
 #endif
 
-#ifndef AUDIO_DEVICE_CHANNELS
-  #define AUDIO_DEVICE_CHANNELS 2
+#ifndef MO_AUDIO_CHANNELS
+  #define MO_AUDIO_CHANNELS 2
 #endif
 
-#ifndef AUDIO_DEVICE_SAMPLE_RATE
-  #define AUDIO_DEVICE_SAMPLE_RATE 44100
+#ifndef MO_SAMPLE_RATE
+  #define MO_SAMPLE_RATE 44100
 #endif
 
-#ifndef MAX_AUDIO_BUFFER_CHANNELS
-  #define MAX_AUDIO_BUFFER_CHANNELS 255
+#ifndef MO_BUFFER_SIZE
+  #define MO_BUFFER_SIZE 4096
 #endif
 
+#ifndef MO_MAX_AUDIO_BUFFERS
+  #define MO_MAX_AUDIO_BUFFERS 256
+#endif
 
-typedef enum {
+enum {
   MO_AUDIO_STREAM = 0,
   MO_AUDIO_STATIC
-} MO_AUDIO_USAGE_;
-
+};
 
 typedef struct Mocha Mocha;
 
 typedef struct mo_audio_s mo_audio_t;
-typedef struct mo_wave_s mo_wave_t;
+typedef int mo_id_t;
+
 typedef unsigned int mo_uint32;
-
-struct mo_data_s {
-  int usage;
-  union {
-    void *data;
-    void *fp;
-  };
-  mo_uint32 size;
-};
-
 /*======================
  * Audio Module
  *======================*/
 MO_API int mo_init(int flags);
-MO_API int mo_deinit();
+MO_API void mo_quit(void);
 
 MO_API int mo_start_device();
 MO_API int mo_stop_device();
 
-MO_API mo_audio_t* mo_audio(void *data, mo_uint32 size, int usage);
-MO_API mo_audio_t* mo_audio_load(const char *filename, int usage);
-MO_API int mo_audio_destroy(mo_audio_t *audio);
+/* Audio */
+MO_API mo_audio_t* mo_load_audio_from_memory(void* data, mo_uint32 size, int usage);
+MO_API mo_audio_t* mo_load_audio_from_file(FILE* fp, int usage); /* TODO */
+MO_API void mo_destroy_audio(mo_audio_t* audio);
 
-MO_API float mo_volume(mo_audio_t *audio, float volume);
-MO_API int mo_play(mo_audio_t *audio);
-MO_API int mo_pause(mo_audio_t *audio);
-MO_API int mo_stop(mo_audio_t *audio);
+MO_API void mo_audio_set_volume(mo_audio_t* audio, float volume);
+MO_API void mo_audio_set_loop(mo_audio_t* audio, int loop);
 
-MO_API int mo_is_playing(mo_audio_t *audio);
+MO_API mo_id_t mo_play_audio(mo_audio_t* audio);
+MO_API void mo_audio_pause_all(mo_audio_t* audio);
+MO_API void mo_audio_stop_all(mo_audio_t* audio);
+
+MO_API int mo_audio_is_any_playing(mo_audio_t* audio);
+
+/* Audio Instance */
+MO_API void mo_audio_instance_play(mo_id_t id);
+MO_API void mo_audio_instance_pause(mo_id_t);
+MO_API void mo_audio_instance_stop(mo_id_t);
+MO_API void mo_audio_instance_set_loop(mo_id_t, int loop);
+MO_API void mo_audio_instance_set_volume(mo_id_t, float volume);
+
+MO_API int mo_audio_instance_is_playing(mo_id_t);
 
 #endif // TICO_AUDIO_H

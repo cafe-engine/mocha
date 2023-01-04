@@ -1,6 +1,7 @@
 .vscode
 .clangd
 mocha
+hello
 *.o
 *.a
 *.so
