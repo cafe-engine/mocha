@@ -8,8 +8,8 @@ description = "Library for handle audio, for now it's just a wrapper for miniaud
 categories = ["audio", "engine"]
 keywords = ["audio", "cafe", "audio-engine", "framework", "engine"]
 authors = ["Canoi Gomes <canoiaguiar@gmail.com>"]
-repository = "https://codeberg.org/cafe/mocha"
-version = "0.1.1"
+repository = "https://github.com/cafe-engine/mocha"
+version = "0.1.2"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
