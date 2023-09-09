@@ -1,0 +1,20 @@
+[lib]
+name = "mocha"
+path = "src/lib.rs"
+
+[package]
+name = "mocha_audio"
+description = "Library for handle audio, for now it's just a wrapper for miniaudio"
+categories = ["audio", "engine"]
+keywords = ["audio", "cafe", "audio-engine", "framework", "engine"]
+authors = ["Canoi Gomes <canoiaguiar@gmail.com>"]
+repository = "https://codeberg.org/cafe/mocha"
+version = "0.1.1"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[build-dependencies]
+cc = "1.0.81"

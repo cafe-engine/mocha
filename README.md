@@ -1,29 +1,20 @@
 # Mocha
-a tiny c lib for handle audio
 
-```c
-#include "mocha.h"
+Mocha is a lib for handle audio using miniaudio, my plan is to exclude miniaudio dependency for use Rust only to make an audio engine.
 
-int main(int argc, char ** argv) {
+The project is one of the modules of the [`cafe`](https://crates.io/crates/cafe_core) project.
 
-    mo_init(0);
-    FILE* fp;
-    fp = fopen("music.mp3", "rb");
-    fseek(fp, 0, SEEK_END);
-    int len = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    void* data = malloc(len);
-    fread(data, 1, len, fp);
+```rust
+extern crate mocha;
 
-    mo_audio_t *audio = mo_load_audio_from_memory(data, len, MO_AUDIO_STREAM);
-    fclose(fp);
+use mocha::{Audio, AudioUsage};
 
-    while (mo_audio_is_any_playing(audio));
-
-    free(data);
-    mo_destroy_audio(audio);
-    mo_quit();
-
-    return 0;
+fn main() {
+    mocha::init();
+    let audio = mocha::load("audio.wav", AudioUsage::Stream).unwrap();
+    let instance = audio.play();
+    while instance.is_playing() {}
+    mocha::quit();
 }
 ```
+

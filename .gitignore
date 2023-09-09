@@ -1,8 +1,2 @@
-.vscode
-.clangd
-mocha
-hello
-*.o
-*.a
-*.so
-compile_commands.json
+target/
+Cargo.lock
